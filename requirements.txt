@@ -16,3 +16,4 @@ parsenvy==3.0.2
 black==23.3.0
 protobuf==4.23.3
 requests==2.32.3
+tqdm==4.67.1
