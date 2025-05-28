@@ -83,33 +83,26 @@ def extract_brand(text):
     Extracts the brand name from the brand column or the main column. 
     
     Recognized brands:
-    (aral, shell, esso, total, avia, jet, star, agip eni, raiffeisen, bft, oil!, sb) // else: other
+    (aral, shell, esso, total, avia, jet, star, agip, raiffeisen, bft, oil!, sb) // else: other
 
     How to call: 
-    from Data_cleaning import extract_brand // df["brand_clean"] =df.apply(get_clean_brand, axis=1)
+    from Data_cleaning import extract_brand // df["brand_clean"] =df.apply(extract_brand, axis=1)
     
     Returns: Text (str) with brand name or 'other'
    """
-    known_brands=['aral', 'shell', 'esso', 'total', 'avia', 'jet', 'star', 'agip eni', 'raiffeisen', 'bft', 'oil!', 'sb']
+    known_brands=['aral', 'shell', 'esso', 'total', 'avia', 'jet', 'star', 'agip', 'raiffeisen', 'bft', 'oil!', 'sb']
     
 
     text = str(text).lower()
     for brand in known_brands:
         if brand in text:
             return brand
-    return None
+    return 'other'
 
 # Create 'brand_clean' column
 def get_clean_brand(row):
-    # First try from brand column
-    brand_value = extract_brand(row["brand"])
-    if brand_value:
-        return brand_value
-    
-    # Then try from name column
-    name_value = extract_brand(row["name"])
-    if name_value:
-        return name_value
-    
-    # Otherwise: unknown
-    return "other"
+    return (
+        extract_brand(row["brand"])
+        if extract_brand(row["brand"]) != "other"
+        else extract_brand(row["name"])
+    )
