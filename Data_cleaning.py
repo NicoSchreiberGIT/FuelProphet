@@ -83,7 +83,7 @@ def extract_brand(text):
     Extracts the brand name from the brand column or the main column. 
     
     Recognized brands:
-    (aral, shell, esso, total, avia, jet, star, agip eni, raiffeisen, bft, oil!, sb) // else: other
+    (aral, shell, esso, total, avia, jet, star, agip, raiffeisen, bft, oil!, sb) // else: other
 
     How to call: 
     from Data_cleaning import extract_brand // df["brand_clean"] =df.apply(extract_brand, axis=1)
