@@ -1,9 +1,12 @@
 
 # Import packages
+import numpy as np
 import pandas as pd
 from datetime import datetime, date, time, timedelta
 import seaborn as sns
 import matplotlib.pyplot as plt
+from prophet import Prophet
+from sklearn.metrics import mean_squared_error,mean_absolute_error
 
 def baseline_model(data,date="datetime",value="e5",predictions=12*24,stepsize=(5,"minutes"),rule="daily mean"):
     """Predicts fuel prices with a simple model
@@ -47,6 +50,30 @@ def baseline_model(data,date="datetime",value="e5",predictions=12*24,stepsize=(5
 
 ##############################################################################################################################
 
+def prophet_model(data,station_uuid,test_days=1,date="datetime",value="e5",stepsize=5):
+
+
+    if station_uuid != None:
+        df = data[data["station_uuid"] == station_uuid]
+    else:
+        df = data
+    
+    # Split data
+    train,test = split_data(df,interval=("days",test_days))
+
+    model = Prophet(daily_seasonality=True, weekly_seasonality=True)
+    train  = train.copy().rename(columns={date: "ds", value: "y"})
+    model.fit(train)
+
+    future = model.make_future_dataframe(periods=int(test_days*24*(60/stepsize)), freq=str(stepsize)+"min")
+    predictions = model.predict(future)
+    predictions = predictions[predictions['ds'].isin(train['ds']) == False]
+    predictions  = predictions.copy().rename(columns={"ds": date, "yhat": value})
+
+    return df,predictions
+
+##############################################################################################################################
+
 def split_data(data,date="datetime",interval=("days",1)):
     """Splits data into train and test data, while test includes the last time interval from the whole dataset
 
@@ -62,8 +89,8 @@ def split_data(data,date="datetime",interval=("days",1)):
     params = {interval[0]: interval[1]}
     
     split_date = data[date].iloc[-1]-timedelta(**params)
-    train = data[data[date] < split_date]
-    test = data[data[date] >= split_date]
+    train = data[data[date] <= split_date]
+    test = data[data[date] > split_date]
 
     return train,test
 
@@ -85,7 +112,6 @@ def print_model(real_data,predictions,x="datetime",y="e5",xlim=None,ylim=None,na
     sns.set_theme(rc={'figure.figsize':(15,6)})
 
     sns.lineplot(data=real_data, x="datetime", y="e5", color="blue",drawstyle='steps-post')
-    #plt.hlines(real_data[y].iloc[-1],xmin=real_data[x].iloc[-1],xmax=predicts[x].iloc[0],color="blue")
     plt.vlines(predictions[x].iloc[0],ymin=real_data[y].iloc[-1],ymax=predictions[y].iloc[0],color="orange")
     sns.lineplot(data=predictions, x="datetime", y="e5", color="orange",drawstyle='steps-post')
     if xlim != None:
@@ -101,4 +127,7 @@ def print_model(real_data,predictions,x="datetime",y="e5",xlim=None,ylim=None,na
     plt.gcf().autofmt_xdate()
 
     plt.show()
+
+    print("RMSE:", round(np.sqrt(mean_squared_error(real_data[real_data[x].isin(predictions[x])][y],predictions[y])),3))
+    print("MAE:", round(mean_absolute_error(real_data[real_data[x].isin(predictions[x])][y],predictions[y]),3))
 

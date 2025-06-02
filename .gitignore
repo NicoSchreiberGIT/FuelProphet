@@ -129,7 +129,14 @@ dmypy.json
 .pyre/
 
 
-data/*.csv
+data/2024_prices/
+data/2024_stations/
+data/2025_prices/
+data/2025_stations/
+data/fueldata/
+data/exchange_rate/raw_data
+data/oildata/raw_data
+data/*.xml
 models/*.sav
 mlruns
 models/*
