@@ -3,8 +3,11 @@ import numpy as np
 import pandas as pd
 import plotly_express as px
 import plotly.graph_objects as go
+import sys
+import os
+sys.path.append(os.path.abspath(".."))
 
-from functions_nico.get_current_fuel_prices import get_current_fuel_prices
+from get_current_fuel_prices import get_current_fuel_prices
 
 
 brand_colors = {
@@ -24,7 +27,7 @@ brand_colors = {
 'other': "#BBAEAE"
 }
 
-def one_station(df=None, uuid=None, type='e5'):
+def one_station(df=None, uuid=None, fuel='e5'):
     '''
     Creates a plot of the price of one station given the uuid.
     Example: 
@@ -34,13 +37,13 @@ def one_station(df=None, uuid=None, type='e5'):
     Args:
         df (dataframe): _description_. Defaults to None.
         uuid (str): _description_. Defaults to None.
-        type (str, optional): Fuel Type: 'e5', 'e10' or 'diesel'. Defaults to 'e5'.
+        fuel (str, optional): Fuel Type: 'e5', 'e10' or 'diesel'. Defaults to 'e5'.
     Returns:
         plot: price of fuel over time for one gas station
     '''
     one_station_df = df[df["station_uuid"] == uuid]
 
-    fig = px.line(one_station_df, x="datetime", y=type, title="Fuel Price Over Time")
+    fig = px.line(one_station_df, x="datetime", y=fuel, title="Fuel Price Over Time")
     fig.update_layout(
         title_font_size=20,
         xaxis_title="Date",
@@ -53,13 +56,13 @@ def one_station(df=None, uuid=None, type='e5'):
     return fig
 
 ###################################################################################################
-def average_prices(df, type='e5', brand=False, area='Germany', brand_column_name='brand_clean'):
+def average_prices(df, fuel='e5', brand=False, area='Germany', brand_column_name='brand_clean'):
     '''
     _summary_
 
     Args:
         df (dataframe): must contain columns: 'station_uuid', 'datetime' and one of: 'e5', 'e10' or 'diesel', optional: 'brand_clean'.
-        type (str, optional): Fuel Type: 'e5', 'e10' or 'diesel'. Defaults to 'e5'.
+        fuel (str, optional): Fuel Type: 'e5', 'e10' or 'diesel'. Defaults to 'e5'.
         brand (bool, optional): Plots a line per brand (must contain cleaned brand column (from data_cleaning -> extract brand)). Defaults to False.
         area (str, optional): City, area or postcode, only needed for title. Defaults to Germany.
         brand_column_name (str, optional): name of the column with cleaned brand name. Defaults to 'brand_clean'
@@ -79,7 +82,7 @@ def average_prices(df, type='e5', brand=False, area='Germany', brand_column_name
     if brand == False:
 
         df = (
-        df.groupby('station_uuid')[type]
+        df.groupby('station_uuid')[fuel]
         .resample('5min')  
         .ffill() # there are values for every 5 minutes for all stations
         .reset_index()
@@ -87,14 +90,14 @@ def average_prices(df, type='e5', brand=False, area='Germany', brand_column_name
 
         df = (
         df
-        .groupby('datetime')[type] 
+        .groupby('datetime')[fuel] 
         .mean() #average price per 5 minutes
         .reset_index()
         )
 
-        df = df[df['e5'].isna() == False] #drop the first missing value
+        df = df[df[fuel].isna() == False] #drop the first missing value
 
-        fig = px.line(df, x="datetime", y=type, title=f"Average {type} price in {area} over Time")
+        fig = px.line(df, x="datetime", y=fuel, title=f"Average {fuel} price in {area} over Time")
         fig.update_layout(
         title_font_size=20,
         xaxis_title="Time",
@@ -108,7 +111,7 @@ def average_prices(df, type='e5', brand=False, area='Germany', brand_column_name
     if brand == True:
 
         df = (
-        df.groupby('station_uuid')[type, brand_column_name]
+        df.groupby('station_uuid')[fuel, brand_column_name]
         .resample('5min')  
         .ffill() # there are values for every 5 minutes for all stations
         .reset_index()
@@ -118,15 +121,15 @@ def average_prices(df, type='e5', brand=False, area='Germany', brand_column_name
         df
         .groupby('datetime')
         .agg({
-            type: 'mean',
+            fuel: 'mean',
             brand_column_name: lambda x: x.mode()[0] 
         })
         .reset_index()
         )
 
-        df = df[df['e5'].isna() == False] #drop the first missing value
+        df = df[df[fuel].isna() == False] #drop the first missing value
 
-        fig = px.line(df, x="datetime", y=type, title=f"Average {type} price in {area} over Time", color=brand_column_name)
+        fig = px.line(df, x="datetime", y=fuel, title=f"Average {fuel} price in {area} over Time", color=brand_column_name)
         fig.update_layout(
         title_font_size=20,
         xaxis_title="Time",
@@ -140,13 +143,13 @@ def average_prices(df, type='e5', brand=False, area='Germany', brand_column_name
     
     return fig
 ###################################################################################################
-def daily_pattern(df, type='e5', brand=False, area='Germany', brand_column_name='brand_clean'):
+def daily_pattern(df, fuel='e5', brand=False, area='Germany', brand_column_name='brand_clean'):
     '''
     _summary_
 
     Args:
         df (df): must contain columns: 'station_uuid', 'datetime' and one of: 'e5', 'e10' or 'diesel', optional: 'brand_clean'.
-        type (str, optional): Fuel Type: 'e5', 'e10' or 'diesel'. Defaults to 'e5'.
+        fuel (str, optional): Fuel Type: 'e5', 'e10' or 'diesel'. Defaults to 'e5'.
         brand (bool, optional): Plots a line per brand (must contain cleaned brand column (from data_cleaning -> extract brand)). Defaults to False.
         area (str, optional): City, area or postcode, only needed for title. Defaults to 'Germany'.
         brand_column_name (str, optional): name of the column with cleaned brand name. Defaults to 'brand_clean'.
@@ -166,7 +169,7 @@ def daily_pattern(df, type='e5', brand=False, area='Germany', brand_column_name=
     if brand == False:
 
         df = (
-        df.groupby('station_uuid')[type]
+        df.groupby('station_uuid')[fuel]
         .resample('5min')  
         .ffill() # there are values for every 5 minutes for all stations
         .reset_index()
@@ -175,12 +178,12 @@ def daily_pattern(df, type='e5', brand=False, area='Germany', brand_column_name=
         df['time_of_day'] = df['datetime'].dt.strftime('%H:%M')
 
         df = (
-        df.groupby('time_of_day')['e5']
+        df.groupby('time_of_day')[fuel]
         .mean()
         .reset_index()
         )
 
-        fig = px.line(df, x="datetime", y=type, title=f"Average {type} price in {area} per day", color=brand_column_name)
+        fig = px.line(df, x="datetime", y=fuel, title=f"Average {fuel} price in {area} per day", color=brand_column_name)
         fig.update_layout(
         title_font_size=20,
         xaxis_title="Time",
@@ -194,7 +197,7 @@ def daily_pattern(df, type='e5', brand=False, area='Germany', brand_column_name=
     if brand == True:
 
         df = (
-        df.groupby('station_uuid')[type, brand_column_name]
+        df.groupby('station_uuid')[fuel, brand_column_name]
         .resample('5min')  
         .ffill() # there are values for every 5 minutes for all stations
         .reset_index()
@@ -206,12 +209,12 @@ def daily_pattern(df, type='e5', brand=False, area='Germany', brand_column_name=
         df
         .groupby([brand_column_name, 'time_of_day'])
         .agg({
-            type: 'mean'
+            fuel: 'mean'
         })
         .reset_index()
         )
 
-        fig = px.line(df, x="datetime", y=type, title=f"Average {type} price in {area} per day")
+        fig = px.line(df, x="datetime", y=fuel, title=f"Average {fuel} price in {area} per day")
         fig.update_layout(
         title_font_size=20,
         xaxis_title="Time",
@@ -225,7 +228,8 @@ def daily_pattern(df, type='e5', brand=False, area='Germany', brand_column_name=
     
     return fig
 ###################################################################################################
-def print_scattermap(df=None, brand=False, centerlat= 51.1634, centerlon=0.4477, zoom=5.4):
+def print_scattermap(df=None, brand=False, centerlat= 51.1634, centerlon=10.4477, zoom=5.4, brand_column_name='brand_clean'):
+
     '''
     Creates a scattermap of the gas stations in a dataframe. Center default is center of Germany.
 
@@ -233,7 +237,7 @@ def print_scattermap(df=None, brand=False, centerlat= 51.1634, centerlon=0.4477,
         df (dataframe): must contain columns: 'latitude', 'longitude', 'name', optional: 'brand_clean'  Defaults to None.
         brand (bool, optional): If true, plots brand color and legend (must contain cleaned brand column (from data_cleaning -> extract brand)). Defaults to False.
         centerlat (float, optional): _description_. Defaults to 51.1634.
-        centerlon (float, optional): _description_. Defaults to 0.4477.
+        centerlon (float, optional): _description_. Defaults to 10.4477.
         zoom (float, optional): _description_. Defaults to 5.4.
 
     Returns:
@@ -241,30 +245,31 @@ def print_scattermap(df=None, brand=False, centerlat= 51.1634, centerlon=0.4477,
     '''
     if brand == True:
     
-        #colors = df['brand_clean'].map(brand_colors)
         fig =   px.scatter_map(
-            df, 
-            lat = 'latitude',
-            lon = 'longitude',
-            hover_name = 'name',
-            hover_data = {'latitude' : False, 'longitude' : False},
-            center = {'lat': centerlat, 'lon': centerlon},
-            zoom = zoom,
-            color='brand_clean',
-            color_discrete_map=brand_colors, #maps color from defined brand_colors
-            labels={"brand_clean": "brand"} #nicer the legend title
-            )
+        df, 
+        lat = 'latitude',
+        lon = 'longitude',
+        hover_name = 'name',
+        hover_data = {'latitude' : False, 'longitude' : False},
+        #center = {'lat': 51.1634, 'lon': 10.4477},
+        zoom = 5.4,
+        color=brand_column_name,
+        color_discrete_map=brand_colors,
+        labels={"brand_clean": "brand"}
+        )
         fig.update_layout(autosize=False,
-            width=1200,
-            height=800,
-            margin={
-                'l':50,
-                'r':50,
-                'b':30,
-                't':30}
-            )
+        width=1200,
+        height=800,
+         margin={
+        'l':50,
+        'r':50,
+        'b':30,
+        't':30},
+        mapbox_center = {'lat': centerlat, 'lon': centerlon} 
+)
+        
     if brand == False:
-        #colors = df['brand_clean'].map(brand_colors)
+
         fig =   px.scatter_map(
             df, 
             lat = 'latitude',
@@ -272,8 +277,7 @@ def print_scattermap(df=None, brand=False, centerlat= 51.1634, centerlon=0.4477,
             hover_name = 'name',
             hover_data = {'latitude' : False, 'longitude' : False},
             center = {'lat': centerlat, 'lon': centerlon},
-            zoom = zoom,
-            color='black'
+            zoom = zoom
             )
         fig.update_layout(autosize=False,
             width=1200,
@@ -285,6 +289,7 @@ def print_scattermap(df=None, brand=False, centerlat= 51.1634, centerlon=0.4477,
                 't':30}
             )
     return fig
+
 ###################################################################################################
 def api_map(lat=53.6097731, lon=10.0330959, radius=5, ):
     

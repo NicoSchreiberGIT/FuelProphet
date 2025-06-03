@@ -2,14 +2,17 @@ import pandas as pd
 import os
 from datetime import datetime
 
-def data_cleaning_datetime(df):
+def data_cleaning_datetime(df, drop=False):
     '''
     removes NaNs, converts datetime and drops unnecessary columns
+
     Args:
-        dataframe
+        df (dataframe): the concatenated dataframe
+        drop (boolean): when set to True the following columns are dropped:
+        ['dieselchange', 'e5change', 'e10change', 'date', 'openingtimes_json']. Defaults to False
 
     Returns:
-        dataframe: cleaned data with datetime
+       dataframe: cleaned data with datetime
     '''
     # columns to drop
     drop = ['dieselchange', 'e5change', 'e10change', 'date', 'openingtimes_json']
@@ -19,6 +22,9 @@ def data_cleaning_datetime(df):
     # makes a datetime column
     df['datetime'] = df['date'].apply(lambda x: datetime.strptime(x.split("+")[0], "%Y-%m-%d %H:%M:%S"))
     
+    if drop == True: 
+        df = df.drop(columns=drop)
+
     return df
 
 def clean_stations_file(path):
