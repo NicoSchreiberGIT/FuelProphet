@@ -35,7 +35,6 @@ def resample(merged_df, fuel='e5', time='5min'):
       .mean()
       .reset_index()
     )
-    grouped = grouped.set_index('datetime')
     df = grouped[grouped[fuel].notna()]
     return df 
 
@@ -55,26 +54,13 @@ def add_seasonal(resampled, fuel='e5', period=288):
     '''
     decompose = seasonal_decompose(resampled[fuel], model='additive', period = period)
     seasonal_df = decompose.seasonal.reset_index()
-    seasonal_df['time_of_day'] = seasonal_df['datetime'].dt.time
-    daily_df = pd.DataFrame({
-        'time': seasonal_df['time_of_day'],
-        'seasonal_component': seasonal_df['seasonal']
-    })
-
-    resampled_temp = resampled.reset_index()
-    resampled_temp['time_of_day'] = resampled_temp['datetime'].dt.time
-
-    merged = resampled_temp.merge(daily_df, 
-                              left_on='time_of_day', 
-                              right_on='time', 
-                              how='left')
 
     df = pd.DataFrame({
-        'datetime': merged['datetime'],
-        'seasonal_component': merged['seasonal_component'],
-        'e5' : merged[fuel]
+        'datetime': resampled['datetime'],
+        'seasonal_component': seasonal_df['seasonal'],
+        'e5' : resampled[fuel]
     })
-
+    df = df[df[fuel].notna()]
     return df
 
 ####################################################################################################################################################################
@@ -112,33 +98,18 @@ def resample_with_seasonality(merged_df, fuel='e5', time='5min', period=288):
       .mean()
       .reset_index()
     )
-    grouped = grouped.set_index('datetime')
     resampled = grouped[grouped[fuel].notna()]
 
     decompose = seasonal_decompose(resampled[fuel], model='additive', period = period)
     seasonal_df = decompose.seasonal.reset_index()
-    seasonal_df['time_of_day'] = seasonal_df['datetime'].dt.time
-    daily_df = pd.DataFrame({
-        'time': seasonal_df['time_of_day'],
-        'seasonal_component': seasonal_df['seasonal']
-    })
-
-    resampled_temp = resampled.reset_index()
-    resampled_temp['time_of_day'] = resampled_temp['datetime'].dt.time
-
-    merged = resampled_temp.merge(daily_df, 
-                              left_on='time_of_day', 
-                              right_on='time', 
-                              how='left')
 
     df = pd.DataFrame({
-        'datetime': merged['datetime'],
-        'seasonal_component': merged['seasonal_component'],
-        'e5' : merged[fuel]
+        'datetime': resampled['datetime'],
+        'seasonal_component': seasonal_df['seasonal'],
+        'e5' : resampled[fuel]
     })
-
+    df = df[df[fuel].notna()]
     return df
-
 
 
 
