@@ -1,51 +1,154 @@
 import pandas as pd
 from datetime import datetime
+from statsmodels.tsa.seasonal import seasonal_decompose
 
-def resample(df, fuel='e5', time='5min'):
+def resample(merged_df, fuel='e5', time='5min'):
 
     '''
    Creates a dataframe with average fuel prices per timestamp
 
     Args:
-        df (pd.DataFrame): Concatenated dataframe
+        merged_df (pd.DataFrame): Dataframe with station info and prices from multiple stations
         fuel (str, optional): Fuel Type: 'e5', 'e10' or 'diesel'. Defaults to 'e5'.
         time (str, optional): Step size of time intervals. Defaults to '5min'.
+
+    Returns:
+        pd.DataFrame: resampled df
     '''
-    
+    # make datetime
+    merged_df['datetime'] = merged_df['date'].apply(lambda x: datetime.strptime(x.split("+")[0], "%Y-%m-%d %H:%M:%S"))
     # 1. First get only needed columns and sort
-    df = df[['datetime', 'station_uuid', fuel]]
-    df = df.sort_values(by=['datetime', 'station_uuid'])
+    reduced_df = merged_df[['datetime', 'station_uuid', fuel]]
+    reduced_df = reduced_df.sort_values(by=['datetime', 'station_uuid'])
     
     # Remove duplicates keeping the last record for each station-datetime combination
-    df = df.drop_duplicates(subset=['station_uuid', 'datetime'], keep='last')
+    reduced_df_2 = reduced_df.drop_duplicates(subset=['station_uuid', 'datetime'], keep='last')
+    reduced_df_2 = reduced_df_2.set_index('datetime')
     
-    # 2. Create a complete time range for each station
-    min_time = df['datetime'].min()
-    max_time = df['datetime'].max()
-    time_range = pd.date_range(start=min_time, end=max_time, freq=time)
-    stations = df['station_uuid'].unique()
-    
-    # 3. Create MultiIndex with all combinations
-    multi_idx = pd.MultiIndex.from_product(
-        [stations, time_range],
-        names=['station_uuid', 'datetime']
-    )
-    
-    # 4. Set MultiIndex on original data and reindex
-    df = df.set_index(['station_uuid', 'datetime'])
-    df = df.reindex(multi_idx)
-    
-    # 5. Forward fill within each station group
-    df = df.groupby('station_uuid').ffill()
-    
-    # 6. Reset index to get back to columns
-    df = df.reset_index()
-    df = df[df[fuel].notna()]
-    
-    df = (
-    df.groupby('datetime')['e5']
+    # Define the columns to resample and ffill
+    columns_to_resample_and_ffill = [col for col in reduced_df_2.columns if col != 'station_uuid'] # ffill all columns except 'station_uuid' 
+    resampled_df = reduced_df_2.groupby('station_uuid')[columns_to_resample_and_ffill].resample(time).ffill()
+    resampled_df = resampled_df.reset_index() # Reset the index to turn 'date' and 'station_uuid' back into columns
+    resampled_df_2 = resampled_df.iloc[1:] # drop the first row, which is NaN after resampling
+    grouped = (
+    resampled_df_2.groupby('datetime')[fuel]
       .mean()
       .reset_index()
     )
-    
+    grouped = grouped.set_index('datetime')
+    df = grouped[grouped[fuel].notna()]
+    return df 
+
+####################################################################################################################################################################
+
+def add_seasonal(resampled, fuel='e5', period=288):
+    '''
+    Creates a dataframe containing the original dataframe with the seasonal pattern extracted by seasonal decomposition
+
+    Args:
+        resampled (pd.DataFrame): Resampled dataframe (contains: 'datetime' and a fuel column (default: 'e5'))
+        fuel (str, optional): Fuel Type: 'e5', 'e10' or 'diesel'. Defaults to 'e5'.
+        period (int, optional): Periodicity of the seasonal decomposition. Defaults to 288 (equals 1 day).
+
+    Returns:
+        pd.DataFrame: df with seasonal pattern
+    '''
+    decompose = seasonal_decompose(resampled[fuel], model='additive', period = period)
+    seasonal_df = decompose.seasonal.reset_index()
+    seasonal_df['time_of_day'] = seasonal_df['datetime'].dt.time
+    daily_df = pd.DataFrame({
+        'time': seasonal_df['time_of_day'],
+        'seasonal_component': seasonal_df['seasonal']
+    })
+
+    resampled_temp = resampled.reset_index()
+    resampled_temp['time_of_day'] = resampled_temp['datetime'].dt.time
+
+    merged = resampled_temp.merge(daily_df, 
+                              left_on='time_of_day', 
+                              right_on='time', 
+                              how='left')
+
+    df = pd.DataFrame({
+        'datetime': merged['datetime'],
+        'seasonal_component': merged['seasonal_component'],
+        'e5' : merged[fuel]
+    })
+
     return df
+
+####################################################################################################################################################################
+
+def resample_with_seasonality(merged_df, fuel='e5', time='5min', period=288):
+    '''
+    _summary_
+
+    Args:
+        merged_df (pd.DataFrame): Dataframe with station info and prices from multiple stations
+        fuel (str, optional): Fuel Type: 'e5', 'e10' or 'diesel'. Defaults to 'e5'.
+        time (str, optional): Step size of time intervals. Defaults to '5min'.
+        period (int, optional): Periodicity of the seasonal decomposition. Defaults to 288 (equals 1 day, when time='5min').
+    Returns:
+        pd.DataFrame: resampled df with seasonal pattern
+    '''
+    
+    # make datetime
+    merged_df['datetime'] = merged_df['date'].apply(lambda x: datetime.strptime(x.split("+")[0], "%Y-%m-%d %H:%M:%S"))  
+    # 1. First get only needed columns and sort
+    reduced_df = merged_df[['datetime', 'station_uuid', fuel]]
+    reduced_df = reduced_df.sort_values(by=['datetime', 'station_uuid'])
+    
+    # Remove duplicates keeping the last record for each station-datetime combination
+    reduced_df_2 = reduced_df.drop_duplicates(subset=['station_uuid', 'datetime'], keep='last')
+    reduced_df_2 = reduced_df_2.set_index('datetime')
+    
+    # Define the columns to resample and ffill
+    columns_to_resample_and_ffill = [col for col in reduced_df_2.columns if col != 'station_uuid'] # ffill all columns except 'station_uuid' 
+    resampled_df = reduced_df_2.groupby('station_uuid')[columns_to_resample_and_ffill].resample(time).ffill()
+    resampled_df = resampled_df.reset_index() # Reset the index to turn 'date' and 'station_uuid' back into columns
+    resampled_df_2 = resampled_df.iloc[1:] # drop the first row, which is NaN after resampling
+    grouped = (
+    resampled_df_2.groupby('datetime')['e5']
+      .mean()
+      .reset_index()
+    )
+    grouped = grouped.set_index('datetime')
+    resampled = grouped[grouped[fuel].notna()]
+
+    decompose = seasonal_decompose(resampled[fuel], model='additive', period = period)
+    seasonal_df = decompose.seasonal.reset_index()
+    seasonal_df['time_of_day'] = seasonal_df['datetime'].dt.time
+    daily_df = pd.DataFrame({
+        'time': seasonal_df['time_of_day'],
+        'seasonal_component': seasonal_df['seasonal']
+    })
+
+    resampled_temp = resampled.reset_index()
+    resampled_temp['time_of_day'] = resampled_temp['datetime'].dt.time
+
+    merged = resampled_temp.merge(daily_df, 
+                              left_on='time_of_day', 
+                              right_on='time', 
+                              how='left')
+
+    df = pd.DataFrame({
+        'datetime': merged['datetime'],
+        'seasonal_component': merged['seasonal_component'],
+        'e5' : merged[fuel]
+    })
+
+    return df
+
+
+
+
+
+####################################################################################################################################################################
+####################################################################################################################################################################
+####################################################################################################################################################################
+####################################################################################################################################################################
+####################################################################################################################################################################
+####################################################################################################################################################################
+####################################################################################################################################################################
+####################################################################################################################################################################
+####################################################################################################################################################################

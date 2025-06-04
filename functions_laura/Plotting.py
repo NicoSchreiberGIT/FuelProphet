@@ -3,11 +3,14 @@ import numpy as np
 import pandas as pd
 import plotly_express as px
 import plotly.graph_objects as go
+import matplotlib.pyplot as plt
 import sys
 import os
 sys.path.append(os.path.abspath(".."))
 
+from datetime import datetime
 from get_current_fuel_prices import get_current_fuel_prices
+from statsmodels.tsa.seasonal import seasonal_decompose
 
 
 brand_colors = {
@@ -344,3 +347,78 @@ def api_map(lat=53.6097731, lon=10.0330959, radius=5, ):
     )
 
     return fig
+
+###################################################################################################
+def decompose_and_plot(merged_df, fuel='e5', time='5min', period=288):
+    '''
+    Resample, decompose and fancy plot the merged dataframe
+
+    Args:
+        merged_df (pd.DataFrame): Dataframe with station info and prices from multiple stations
+        fuel (str, optional): Fuel Type: 'e5', 'e10' or 'diesel'. Defaults to 'e5'.
+        time (str, optional): Step size of time intervals. Defaults to '5min'.
+        period (int, optional): Periodicity of the seasonal decomposition. Defaults to 288 (equals 1 day, when time='5min').
+    '''
+    # Define colors for consistent styling
+    colors = ['#193251','#FF5A36','#696969', '#7589A2']
+    # make datetime
+    merged_df['datetime'] = merged_df['date'].apply(lambda x: datetime.strptime(x.split("+")[0], "%Y-%m-%d %H:%M:%S"))  
+    # 1. First get only needed columns and sort
+    reduced_df = merged_df[['datetime', 'station_uuid', fuel]]
+    reduced_df = reduced_df.sort_values(by=['datetime', 'station_uuid'])
+    
+    # Remove duplicates keeping the last record for each station-datetime combination
+    reduced_df_2 = reduced_df.drop_duplicates(subset=['station_uuid', 'datetime'], keep='last')
+    reduced_df_2 = reduced_df_2.set_index('datetime')
+    
+    # Define the columns to resample and ffill
+    columns_to_resample_and_ffill = [col for col in reduced_df_2.columns if col != 'station_uuid'] # ffill all columns except 'station_uuid' 
+    resampled_df = reduced_df_2.groupby('station_uuid')[columns_to_resample_and_ffill].resample(time).ffill()
+    resampled_df = resampled_df.reset_index() # Reset the index to turn 'date' and 'station_uuid' back into columns
+    resampled_df_2 = resampled_df.iloc[1:] # drop the first row, which is NaN after resampling
+    grouped = (
+    resampled_df_2.groupby('datetime')['e5']
+      .mean()
+      .reset_index()
+    )
+    grouped = grouped.set_index('datetime')
+    resampled = grouped[grouped[fuel].notna()]
+
+    decompose = seasonal_decompose(resampled[fuel], model='additive', period = period)
+
+    # Create subplot layout with 6 rows
+    fig, ax = plt.subplots(6, 1, figsize=(12, 18), constrained_layout=True)
+
+    # Plot Signal
+    ax[0].set(title='Original Time Series', ylabel='Price (€/L)')
+    decompose.observed.plot(color=colors[0], linewidth=1, ax=ax[0])
+
+    # Plot Trend
+    ax[1].set(title='Trend Component', ylabel='Price (€/L)')
+    decompose.trend.plot(color=colors[1], linewidth=1, ax=ax[1])
+
+    # Plot Full Seasonality
+    ax[2].set(title='Seasonal Component (Full View)', ylabel='Price (€/L)')
+    decompose.seasonal.plot(color=colors[2], linewidth=1, ax=ax[2])
+
+    # Plot Week Zoom
+    ax[3].set(title='Seasonal Component (One Week Zoom)', ylabel='Price (€/L)')
+    week_zoom = decompose.seasonal.iloc[:288*7]  # One week of data
+    week_zoom.plot(color=colors[2], linewidth=1, ax=ax[3])
+
+    # Plot Day Zoom
+    ax[4].set(title='Seasonal Component (24 Hour Zoom)', ylabel='Price (€/L)')
+    day_zoom = decompose.seasonal.iloc[:288]  # One day of data (288 5-minute intervals)
+    day_zoom.plot(color=colors[2], linewidth=1, ax=ax[4])
+
+    # Plot Residual
+    ax[5].set(title='Residual Component', ylabel='Price (€/L)')
+    ax[5].scatter(decompose.resid.index, decompose.resid, color=colors[3], s=2)
+
+    # for i in range(4):
+    #     ax[i].set_xlim(pd.to_datetime("2023"),pd.to_datetime("2026"))
+            
+    # Add main title
+    plt.suptitle('Seasonal Decomposition of E5 Fuel Prices', fontsize=16, y=1.02)
+    plt.show()
+
