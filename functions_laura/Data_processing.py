@@ -112,9 +112,27 @@ def resample_with_seasonality(merged_df, fuel='e5', time='5min', period=288):
     return df
 
 
-
-
 ####################################################################################################################################################################
+## adjusted from anton functions_models package
+def train_test_split(df, start_date_train = '01-01-2023', end_date_train = '30-04-2025', start_date_test = '01-05-2025', end_date_test = '24-05-2025'):
+    """Splits the DataFrame into training and testing sets based on date ranges.
+
+    Args:
+        df (DataFrame): Input DataFrame containing fuel prices.
+        start_date_train (str): Start date for the training set.
+        end_date_train (str): End date for the training set.
+        start_date_test (str): Start date for the testing set.
+        end_date_test (str): End date for the testing set.
+
+    Returns:
+        tuple: Training and testing DataFrames.
+    """
+    pd.to_datetime([start_date_train, end_date_train, start_date_test, end_date_test], format='%d-%m-%Y')
+    train = df[(df['datetime'] >= start_date_train) & (df['datetime'] <= end_date_train)]
+    test = df[(df['datetime'] >= start_date_test) & (df['datetime'] <= end_date_test)]
+    return train, test
+
+
 ####################################################################################################################################################################
 ####################################################################################################################################################################
 ####################################################################################################################################################################

@@ -15,7 +15,7 @@ from statsmodels.tsa.seasonal import seasonal_decompose
 
 brand_colors = {
 'aral': '#0069B3',
-'shell': '#FFD100',
+'shell': '#ED1C24',
 'total': '#EA1C24',
 'esso': '#003399',
 'avia': '#333333',
@@ -186,7 +186,7 @@ def daily_pattern(df, fuel='e5', brand=False, area='Germany', brand_column_name=
         .reset_index()
         )
 
-        fig = px.line(df, x="datetime", y=fuel, title=f"Average {fuel} price in {area} per day", color=brand_column_name)
+        fig = px.line(df, x="time_of_day", y=fuel, title=f"Average {fuel} price in {area} per day")
         fig.update_layout(
         title_font_size=20,
         xaxis_title="Time",
@@ -200,7 +200,7 @@ def daily_pattern(df, fuel='e5', brand=False, area='Germany', brand_column_name=
     if brand == True:
 
         df = (
-        df.groupby('station_uuid')[fuel, brand_column_name]
+        df.groupby('station_uuid')[[fuel, brand_column_name]]
         .resample('5min')  
         .ffill() # there are values for every 5 minutes for all stations
         .reset_index()
@@ -217,7 +217,11 @@ def daily_pattern(df, fuel='e5', brand=False, area='Germany', brand_column_name=
         .reset_index()
         )
 
-        fig = px.line(df, x="datetime", y=fuel, title=f"Average {fuel} price in {area} per day")
+        fig = px.line(df, 
+                      x="time_of_day", 
+                      y=fuel, title=f"Average {fuel} price in {area} per day", 
+                      color=brand_column_name,
+                      color_discrete_map=brand_colors)
         fig.update_layout(
         title_font_size=20,
         xaxis_title="Time",
@@ -226,10 +230,11 @@ def daily_pattern(df, fuel='e5', brand=False, area='Germany', brand_column_name=
         height=800,
         margin=dict(l=40, r=40, t=60, b=40),
         template="plotly_white",
-        color_discrete_map=brand_colors
+        
         )
     
     return fig
+
 ###################################################################################################
 def print_scattermap(df=None, brand=False, centerlat= 51.1634, centerlon=10.4477, zoom=5.4, brand_column_name='brand_clean'):
 
