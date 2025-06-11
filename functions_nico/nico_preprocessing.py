@@ -46,7 +46,7 @@ def load_data(filename,filetype="parquet",date="date",outliers=("e5",1.0,2.5),re
 
 ##############################################################################################################################
 
-def merge_oil(data,date="datetime",oildata="data/oildata/oil_EIA.parquet"):
+def merge_oil(data,date="datetime",oildata="../data/nico_features/oil_EIA.parquet"):
     """Merges oil data to the input dataset by date
 
     Args:
@@ -75,7 +75,7 @@ def merge_oil(data,date="datetime",oildata="data/oildata/oil_EIA.parquet"):
 
 ##############################################################################################################################
 
-def merge_ex_rate(data,date="datetime",exdata="data/exchange_rate/exchange_rate.parquet"):
+def merge_ex_rate(data,date="datetime",exdata="../data/nico_features/exchange_rate.parquet"):
     """Merges daily exchange rates to the input dataset
 
     Args:
