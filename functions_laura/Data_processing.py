@@ -132,32 +132,6 @@ def train_test_split(df, start_date_train = '2023-01-01', end_date_train = '2025
     
     return train, test
 
-
-####################################################################################################################################################################
-def one_station_add_seasonal(resampled_station_df, fuel='e5', period=288):
-    '''
-    Creates a dataframe containing the original dataframe with the seasonal pattern extracted by seasonal decomposition
-
-    Args:
-        df (pd.DataFrame): Dataframe of one station (contains: 'datetime' and a fuel column (default: 'e5'))
-        fuel (str, optional): Fuel Type: 'e5', 'e10' or 'diesel'. Defaults to 'e5'.
-        period (int, optional): Periodicity of the seasonal decomposition. Defaults to 288 (equals 1 day).
-
-    Returns:
-        pd.DataFrame: df with seasonal pattern
-    '''
-    decompose = seasonal_decompose(resampled_station_df[fuel], model='additive', period = period)
-    seasonal_df = decompose.seasonal.reset_index()
-
-    df = pd.DataFrame({
-        'datetime': resampled_station_df['datetime'],
-        'seasonal_component': seasonal_df['seasonal'],
-        'e5' : resampled_station_df[fuel]
-    })
-    df = resampled_station_df[resampled_station_df[fuel].notna()]
-    return df
-
-
 ####################################################################################################################################################################
 def one_station_resample_with_seasonality(merged_df, uuid=None, fuel='e5', time='5min', period=288):
     '''
