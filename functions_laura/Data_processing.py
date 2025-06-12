@@ -64,7 +64,6 @@ def add_seasonal(resampled, fuel='e5', period=288):
     return df
 
 ####################################################################################################################################################################
-
 def resample_with_seasonality(merged_df, fuel='e5', time='5min', period=288):
     '''
     _summary_
@@ -150,7 +149,7 @@ def one_station_resample_with_seasonality(merged_df, uuid=None, fuel='e5', time=
     #Drop NaNs
     merged_df = merged_df[merged_df['e5'].notna()]
     # make datetime
-    merged_df['datetime'] = merged_df['date'].apply(lambda x: datetime.strptime(x.split("+")[0], "%Y-%m-%d %H:%M:%S"))  
+    #merged_df['datetime'] = merged_df['date'].apply(lambda x: datetime.strptime(x.split("+")[0], "%Y-%m-%d %H:%M:%S"))  
     # 1. First get only needed columns and sort
     reduced_df = merged_df[['datetime', 'station_uuid', fuel]]
     reduced_df = reduced_df.sort_values(by=['datetime', 'station_uuid'])
