@@ -189,8 +189,8 @@ def print_model(real_data,predictions,x="datetime",y="e5",xlim=None,ylim=None,na
                  linewidth = 3
                  )
     
-    plt.text(predictions[x].iloc[0]+timedelta(minutes=40),ylim[0]+0.02,"Test ->",fontweight="bold",fontsize=14,color="#a6a5a4")
-    plt.text(predictions[x].iloc[0]-timedelta(minutes=360),ylim[0]+0.02,"<- Train",fontweight="bold",fontsize=14,color="#a6a5a4")
+    plt.text(predictions[x].iloc[0]+timedelta(minutes=40),ylim[0]+0.02,"Test →",fontweight="bold",fontsize=14,color="#a6a5a4")
+    plt.text(predictions[x].iloc[0]-timedelta(minutes=360),ylim[0]+0.02,"← Train",fontweight="bold",fontsize=14,color="#a6a5a4")
     
     
 
