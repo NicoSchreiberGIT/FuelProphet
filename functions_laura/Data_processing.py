@@ -16,7 +16,7 @@ def resample(merged_df, fuel='e5', time='5min'):
         pd.DataFrame: resampled df
     '''
     # make datetime
-    merged_df['datetime'] = merged_df['date'].apply(lambda x: datetime.strptime(x.split("+")[0], "%Y-%m-%d %H:%M:%S"))
+    #merged_df['datetime'] = merged_df['date'].apply(lambda x: datetime.strptime(x.split("+")[0], "%Y-%m-%d %H:%M:%S"))
     # 1. First get only needed columns and sort
     reduced_df = merged_df[['datetime', 'station_uuid', fuel]]
     reduced_df = reduced_df.sort_values(by=['datetime', 'station_uuid'])
