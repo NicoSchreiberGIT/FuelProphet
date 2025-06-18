@@ -8,6 +8,7 @@ import datetime as dt
 import warnings
 warnings.filterwarnings("ignore")
 
+###############################################################################################################################
 
 def plot_weekday_comp(df, year, week, uuid, analyzer='e5'):
     """Compares the prices for one gas station for one year, one, week but different days.
@@ -63,7 +64,7 @@ def plot_weekday_comp(df, year, week, uuid, analyzer='e5'):
 
 
 
-
+###############################################################################################################################
 
 
 
@@ -127,7 +128,7 @@ def plot_weekdays(df, year, week, day, uuid, analyzer='e5'):
 
 
 
-
+###############################################################################################################################
 
 
 
@@ -225,7 +226,7 @@ def plot_diffstat_city(df1,df2,df3, year, week, day, uuid1, uuid2, uuid3, analyz
     return
 
 
-
+###############################################################################################################################
 
 
 
@@ -292,7 +293,7 @@ def plot_diffstat(df, year, week, day, uuid, analyzer='e5'):
 
 
 
-
+###############################################################################################################################
 
 
 #this function compares the data for a certain analyzer (e5, diesel..), for a certain station_uuid and for a certain day of week and number of displayed weeks

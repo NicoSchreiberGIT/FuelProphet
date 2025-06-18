@@ -2,18 +2,19 @@ import pandas as pd
 import warnings
 warnings.filterwarnings("ignore")
 
-def outliers_cut(df, highest_price = 2.5, lowest_price = 1.0):
+def outliers_cut(df, highest_price = 2.5, lowest_price = 1.0, analyzer = 'e5'):
     """Function for cutting off the outliers
 
     Args:
         df (DataFrame): input DataFrame containing fuel prices.
         highest_price (float, optional): _description_. Defaults to 2.5.
         lowest_price (float, optional): _description_. Defaults to 1.0.
+        analyzer(string, optional): e5, Diesel or e10 Defaults to 'e5
 
     Returns:
         _type_: _description_
     """
-    df = df[(df['diesel']>lowest_price) & (df['e5']>lowest_price) & (df['e5']< highest_price) & (df['diesel']< highest_price)]
+    df = df[(df[analyzer]>lowest_price) & (df[analyzer]< highest_price)]
     return df
 
 ###############################################################################################################################
