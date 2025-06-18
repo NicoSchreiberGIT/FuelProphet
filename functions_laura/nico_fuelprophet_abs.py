@@ -65,30 +65,14 @@ class FuelProphet_abs():
         res = minimize(lambda b: self.cal_cost(b, X, y), self.b, method='L-BFGS-B', bounds=bounds, options={'maxiter': 50})
         self.b = res.x
 
-    def fit_pacf(self, X, lags=900, threshold=0.2):
+    def fit_pacf(self,X,lags=900,threshold=0.2):
         pacf_vals = pacf(np.array(X[self.y]), nlags=lags)
-        pacf_vals = pacf_vals[1:]  # drop lag 0
-        lags_arr = np.arange(1, len(pacf_vals) + 1)
-    
-        selected_lags = lags_arr[abs(pacf_vals) > threshold]
-        self.features = -selected_lags  # make negative lags for your model
-    
-        if self.features.size == 0:
-            self.features = np.array([-1])  # fallback to default lag
-    
+        pacf_vals = pacf_vals[1:]
+        lags = range(0, len(pacf_vals))
+
+        self.features = np.negative(np.array(lags)[abs(pacf_vals) > threshold])
         self.features[self.features == 0] = -1
-    
-        self.b = abs(pacf_vals[selected_lags - 1])  # -1 because we dropped lag 0 above
-
-
-    # def fit_pacf(self,X,lags=900,threshold=0.2):
-    #     pacf_vals = pacf(np.array(X[self.y]), nlags=lags)
-    #     pacf_vals = pacf_vals[1:]
-    #     lags = range(0, len(pacf_vals))
-
-    #     self.features = np.negative(np.array(lags)[abs(pacf_vals) > threshold])
-    #     self.features[self.features == 0] = -1
-    #     self.b        = abs(pacf_vals[self.features])
+        self.b        = abs(pacf_vals[self.features])
         
 
 
