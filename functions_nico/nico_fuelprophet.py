@@ -66,13 +66,17 @@ class FuelProphet():
         self.b = res.x
 
     def fit_pacf(self,X,lags=900,threshold=0.2):
-        pacf_vals = pacf(np.array(X[self.y]), nlags=lags)
-        pacf_vals = pacf_vals[1:]
-        lags = range(0, len(pacf_vals))
 
-        self.features = np.negative(np.array(lags)[abs(pacf_vals) > threshold])
+        # Delete missing values
+        X.dropna(inplace=True)
+
+        self.pacf_vals = pacf(np.array(X[self.y]), nlags=lags)
+        self.pacf_vals = self.pacf_vals[1:]
+        lags = range(0, len(self.pacf_vals))
+
+        self.features = np.negative(np.array(lags)[abs(self.pacf_vals) > threshold])
         self.features[self.features == 0] = -1
-        self.b        = pacf_vals[self.features]
+        self.b = abs(self.pacf_vals[self.features])
         
 
 

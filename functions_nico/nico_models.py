@@ -105,7 +105,7 @@ def split_data(data,date="datetime",interval="2025-04-30 23:59:59"):
 
 ##############################################################################################################################
 
-def print_model(real_data,predictions,x="datetime",y="e5",xlim=None,ylim=None,name="name",title=None,params=None):
+def print_model(real_data,predictions,x="datetime",y="e5",xlim=None,ylim=None,name="name",title=None,metrics=True,params=None):
     """Plots the real data and the predictions in one line plot
 
     Args:
@@ -173,12 +173,12 @@ def print_model(real_data,predictions,x="datetime",y="e5",xlim=None,ylim=None,na
                  linewidth = 3
     )
 
-    plt.vlines(x         = predictions[x].iloc[0],
-               ymin      = real_data[real_data[x] == predictions[x].iloc[0]][y],
-               ymax      = predictions[y].iloc[0],
-               color     = "#f1881aff",
-               linewidth = 3
-               )
+    plt.vlines(x      = predictions[x].iloc[0],
+            ymin      = real_data[real_data[x] == predictions[x].iloc[0]][y],
+            ymax      = predictions[y].iloc[0],
+            color     = "#f1881aff",
+            linewidth = 3
+            )
     
     sns.lineplot(data      = predictions,
                  x         = "datetime",
@@ -241,7 +241,9 @@ def print_model(real_data,predictions,x="datetime",y="e5",xlim=None,ylim=None,na
 
     plt.show()
 
-    print("RMSE:", round(np.sqrt(mean_squared_error(real_data[real_data[x].isin(predictions[x])][y],predictions[y])),3))
-    print("MAE:", round(mean_absolute_error(real_data[real_data[x].isin(predictions[x])][y],predictions[y]),3))
-    print("R2:", round(r2_score(real_data[real_data[x].isin(predictions[x])][y],predictions[y]),3))
+    if metrics:
+        print("RMSE:", round(np.sqrt(mean_squared_error(real_data[real_data[x].isin(predictions[x])][y],predictions[y])),3))
+        print("MAE:", round(mean_absolute_error(real_data[real_data[x].isin(predictions[x])][y],predictions[y]),3))
+        print("R2:", round(r2_score(real_data[real_data[x].isin(predictions[x])][y],predictions[y]),3))
 
+##############################################################################################################################
